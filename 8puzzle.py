@@ -1,6 +1,74 @@
 import sys
 import numpy
 
+#class node:
+#    def __init__(self,state,parent=None,action,cost):
+#        self.state = state
+#        self.parent = parent
+#        self.action = action
+#        self.cost = cost
+
+def result(state,action):
+    if action == "left":
+        for i in range(numpy.size(state,0)):
+            for j in range(numpy.size(state,1)):
+                if state[i][j] == 0 and j != 0 :
+                    temp = state[i][j-1]
+                    state[i][j-1] = 0
+                    state[i][j] = temp
+
+    elif action == "right":
+        for i in range(numpy.size(state,0)):
+            for j in range(numpy.size(state,1)):
+                if state[i][j] == 0 and j != (numpy.size(state,1)-1):
+                    temp = state[i][j+1]
+                    state[i][j+1] = 0
+                    state[i][j] = temp
+                    break
+
+    elif action == "up":
+        for i in range(numpy.size(state,0)):
+            for j in range(numpy.size(state,1)):
+                if state[i][j] == 0 and i != 0:
+                    temp = state[i-1][j]
+                    state[i-1][j] = 0
+                    state[i][j] = temp
+    elif action == "down":
+        break_flag = 0
+
+        for i in range(numpy.size(state,0)):
+            for j in range(numpy.size(state,1)):
+                if state[i][j] == 0 and i != (numpy.size(state,1)-1):
+                    temp = state[i+1][j]
+                    state[i+1][j] = 0
+                    state[i][j] = temp
+                    break_flag = 1
+                    break
+            if break_flag == 1:
+                break
+
+
+#def child_node(problem,parent,action):
+    
+#    state =
+    
+    
+    
+    
+    
+#    return node(state,parent,action,cost)
+
+
+
+
+
+#def uniform_cost_search(m):
+
+
+
+
+
+
 def main():
     row1 = [1,2,3]
     row2 = [4,5,6]
@@ -58,9 +126,6 @@ def main():
                 a[i,j] = int(row3[j])
 
     print(a)
-    print(goal)
-
-
 
 
 main()
