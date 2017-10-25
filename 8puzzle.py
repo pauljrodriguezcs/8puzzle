@@ -1,65 +1,62 @@
 import sys
 import numpy
 
-#class node:
-#    def __init__(self,state,parent=None,action,cost):
-#        self.state = state
-#        self.parent = parent
-#        self.action = action
-#        self.cost = cost
+class node:
+    def __init__(self,state,cost,action=None,parent=None):
+        self.state = state
+        self.parent = parent
+        self.action = action
+        self.cost = cost
 
-def result(state,action):
+def result(parent,action):
+    
+    temp_state = parent.state
+    
     if action == "left":
-        for i in range(numpy.size(state,0)):
-            for j in range(numpy.size(state,1)):
-                if state[i][j] == 0 and j != 0 :
-                    temp = state[i][j-1]
-                    state[i][j-1] = 0
-                    state[i][j] = temp
+        for i in range(numpy.size(temp_state,0)):
+            for j in range(numpy.size(temp_state,1)):
+                if temp_state[i][j] == 0 and j != 0 :
+                    temp = temp_state[i][j-1]
+                    temp_state[i][j-1] = 0
+                    temp_state[i][j] = temp
+                    return temp_state
 
     elif action == "right":
-        for i in range(numpy.size(state,0)):
-            for j in range(numpy.size(state,1)):
-                if state[i][j] == 0 and j != (numpy.size(state,1)-1):
-                    temp = state[i][j+1]
-                    state[i][j+1] = 0
-                    state[i][j] = temp
-                    break
+        for i in range(numpy.size(temp_state,0)):
+            for j in range(numpy.size(temp_state,1)):
+                if temp_state[i][j] == 0 and j != (numpy.size(temp_state,1)-1):
+                    temp = temp_state[i][j+1]
+                    temp_state[i][j+1] = 0
+                    temp_state[i][j] = temp
+                    return temp_state
 
     elif action == "up":
-        for i in range(numpy.size(state,0)):
-            for j in range(numpy.size(state,1)):
-                if state[i][j] == 0 and i != 0:
-                    temp = state[i-1][j]
-                    state[i-1][j] = 0
-                    state[i][j] = temp
+        for i in range(numpy.size(temp_state,0)):
+            for j in range(numpy.size(temp_state,1)):
+                if temp_state[i][j] == 0 and i != 0:
+                    temp = temp_state[i-1][j]
+                    temp_state[i-1][j] = 0
+                    temp_state[i][j] = temp
+                    return temp_state
+
     elif action == "down":
-        break_flag = 0
-
-        for i in range(numpy.size(state,0)):
-            for j in range(numpy.size(state,1)):
-                if state[i][j] == 0 and i != (numpy.size(state,1)-1):
-                    temp = state[i+1][j]
-                    state[i+1][j] = 0
-                    state[i][j] = temp
-                    break_flag = 1
-                    break
-            if break_flag == 1:
-                break
+        for i in range(numpy.size(temp_state,0)):
+            for j in range(numpy.size(temp_state,1)):
+                if temp_state[i][j] == 0 and i != (numpy.size(temp_state,1)-1):
+                    temp = temp_state[i+1][j]
+                    temp_state[i+1][j] = 0
+                    temp_state[i][j] = temp
+                    return temp_state
 
 
-#def child_node(problem,parent,action):
+def child_node(parent_node,action):
+    c_state = result(parent_node,action)
+    cost = parent_node.cost+1
     
-#    state =
-    
-    
-    
-    
-    
-#    return node(state,parent,action,cost)
+    print(c_state)
+    print(parent_node.state)
 
-
-
+    return node(c_state,cost,action,parent_node)
 
 
 #def uniform_cost_search(m):
@@ -127,5 +124,10 @@ def main():
 
     print(a)
 
+    n = node(a,0,None,None)
+    print(n.state,n.cost,n.action,n.parent)
+
+    m = child_node(n,"left")
+    print(m.state,m.cost,m.action,m.parent.state)
 
 main()
