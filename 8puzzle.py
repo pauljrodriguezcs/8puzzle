@@ -155,50 +155,68 @@ def misplaced_tile_heuristic(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
     smallest_value = (float("inf"), n)
-    explored = []
+    explored_tree = []
     children = []
     iteration = 1
     while not numpy.array_equal(smallest_value[1].state,goal):
-        print "iteration: ", iteration
-        explored.append(smallest_value[1].state) #add node.STATE to explored
+        heapq.heappush(explored_tree,(smallest_value[1].cost,smallest_value[1].state)) #add node.STATE to explored
         for i in range(len(actions)):
-            print i
             n = smallest_value[1]
             if n is not None:
                 child = child_node(n,actions[i])
                 if child.state is not None:
                     num_mis_tiles = misplaced_tiles_value(child.state,child.cost)
-                    print num_mis_tiles
                     heapq.heappush(children,(num_mis_tiles,child))
-        smallest_cost_node = heapq.heappop(children)
-        print smallest_cost_node
+        smallest_cost_child = heapq.heappop(children)
         in_explored = 0
-        tmp_explored = []
-        while explored: #if child.STATE is not in explored
-            explored_state = explored.pop()
-            tmp_explored.append(explored_state)
-            print child.state
-            print explored_state
-            if numpy.array_equal(child.state,explored_state):
+        tmp_explored_tree = copy.deepcopy(explored_tree)
+        while tmp_explored_tree: #if child.STATE is not in explored
+            explored_state = heapq.heappop(tmp_explored_tree)
+
+            if numpy.array_equal(smallest_cost_child[1].state,explored_state[1]):
                 in_explored = 1
-                explored = tmp_explored
-                if not in_explored:
-                    print "if not in_explored..."
-                    num_mis_tiles = misplaced_tiles_value(child.state,child.cost)
-                    print num_mis_tiles, "<", smallest_value[0]
-                    if num_mis_tiles < smallest_value[0]:
-                        smallest_value = (num_mis_tiles,child)
+                if children:
+                    smallest_cost_child = heapq.heappop(children)
+                    tmp_explored_tree = copy.deepcopy(explored_tree)
+            if not in_explored and smallest_cost_child[1].state is not None:
+                num_mis_tiles = smallest_cost_child[0]
+                smallest_value = smallest_cost_child
+            if in_explored:
+                in_explored = 0
+        empty_children = []
+        children = empty_children
+                            
         iteration = iteration + 1
     return smallest_value[1]
-
 #end of A* with Misplaced Tile Heuristic function
 
 def main():
     
-    #default puzzle
-    row1 = [8,7,1]
-    row2 = [6,0,2]
-    row3 = [5,4,3]
+    #default puzzle 1   1 2 3 4 x 6 7 5 8
+    #row1 = [1,2,3]
+    #row2 = [4,0,6]
+    #row3 = [7,5,8]
+    
+    #default puzzle 2   1 6 2 4 3 8 7 x 5
+    row1 = [1,6,2]
+    row2 = [4,3,8]
+    row3 = [7,0,5]
+    
+    #default puzzle 3   2 1 3 4 7 6 5 8 x
+    #row1 = [2,1,3]
+    #row2 = [4,7,6]
+    #row3 = [5,8,0]
+    
+    #default puzzle 4   5 x 2 8 4 7 6 3 1
+    #row1 = [5,0,2]
+    #row2 = [8,4,7]
+    #row3 = [6,3,1]
+    
+    #default puzzle 5   8 6 7 2 5 4 3 x 1
+    #row1 = [8,6,7]
+    #row2 = [2,5,4]
+    #row3 = [3,0,1]
+
     
     error = 1
     
