@@ -190,9 +190,60 @@ def misplaced_tile_heuristic(problem):
     return smallest_value[1]
 #end of A* with Misplaced Tile Heuristic function
 
+#Manhattan Distance Calculator
+def manhattan_calculator(problem):
+    goal_values = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1)]
+                    #1     2    3      4     5     6     7     8
+    total_distance = 0
+    for i in range(numpy.size(problem,0)):
+        for j in range(numpy.size(problem,1)):
+            if int(problem[i,j]) is not 0:
+                compare_coord = goal_values[int(problem[i,j]-1)]
+                total_distance = total_distance + abs(i-compare_coord[0]) + abs(j-compare_coord[1])
+    return total_distance
+
+#end manhattan distance calculator end
+
 #A* with Manhattan Distance Heuristic function
-
-
+def manhattan_distance_heuristic(problem):
+    #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
+    n = node(problem,0,None,None)
+    total_distance = manhattan_calculator(n.state)
+    smallest_value = (total_distance, n) #the small child from parent
+    children = []           #heapq with children, organized by f_n
+    explored_tree = []      #nodes that have been seen
+    iteration = 1
+    while not numpy.array_equal(smallest_value[1].state,goal):
+        explored_tree.append((smallest_value[0],smallest_value[1].state)) #add node.STATE to explored
+        n = smallest_value[1]
+        for i in range(len(actions)):
+            if n is not None:
+                child = child_node(n,actions[i])
+                if child.state is not None:
+                    total_distance = manhattan_calculator(child.state) #find number of misplaced tiles
+                    f_n = total_distance   #add total cost
+                    heapq.heappush(children,(f_n,child))
+        in_explored = 0
+        tmp_explored_tree = []
+        child_tuple = (0,n)
+        smallest_found = 0
+        while children and not smallest_found:  #while children list is not empty and the smallest child has not been found yet
+            tmp_explored_tree = []
+            #print "in while loop"
+            child_tuple = heapq.heappop(children)
+            while explored_tree and not in_explored:    #while the explored tree is not empty and its not in explored set
+                explored_tuple = explored_tree.pop()
+                tmp_explored_tree.append(copy.deepcopy(explored_tuple))
+                if numpy.array_equal(child_tuple[1].state,explored_tuple[1]):
+                    in_explored = 1
+            if in_explored:
+                in_explored = 0
+            else:
+                smallest_value = child_tuple
+                smallest_found = 1
+            explored_tree = tmp_explored_tree
+        iteration = iteration + 1
+    return smallest_value[1]
 
 
 #end of A* with Manhatta Distance Heuristic function
