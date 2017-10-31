@@ -83,10 +83,9 @@ def child_node(parent,action):
 def uniform_cost_search(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
-    #frontier = a priority queue ordered by PATH-COST, with node as the only element
+    #frontier = a heap queue ordered by PATH-COST, with node as the only element
     frontier = [] 
     heapq.heappush(frontier,(n.cost,copy.deepcopy(n)))
-    frontier_size = 1
     #explored = an empty set
     explored = [] 
     notdone = 1
@@ -98,7 +97,6 @@ def uniform_cost_search(problem):
             return -1
         #node =POP(frontier) /*chooses the lowest-cost node in frontier */
         n = heapq.heappop(frontier) # returns tuple, (priority,data node)
-        frontier_size = frontier_size -1
         #if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
         if numpy.array_equal(n[1].state,goal): 
             return n[1]
@@ -139,13 +137,13 @@ def uniform_cost_search(problem):
 #end of Uniform Cost Function
 
 #misplaced tiles function
-def misplaced_tiles_value(problem,cost):
+def misplaced_tiles_value(problem):
     same_counter = 0
     for i in range(numpy.size(problem,0)):
         for j in range(numpy.size(problem,1)):
             if problem[i,j] == goal[i,j]:
                 same_counter = same_counter + 1
-    return (8 - same_counter) + cost
+    return (9 - same_counter)
 
 #misplaced tiles function
 
@@ -154,41 +152,50 @@ def misplaced_tiles_value(problem,cost):
 def misplaced_tile_heuristic(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
-    smallest_value = (float("inf"), n)
-    explored_tree = []
-    children = []
+    num_mis_tiles = misplaced_tiles_value(n.state)
+    smallest_value = (num_mis_tiles, n) #the small child from parent
+    children = []           #heapq with children, organized by f_n
+    explored_tree = []      #nodes that have been seen
     iteration = 1
     while not numpy.array_equal(smallest_value[1].state,goal):
-        heapq.heappush(explored_tree,(smallest_value[1].cost,smallest_value[1].state)) #add node.STATE to explored
+        explored_tree.append((smallest_value[0],smallest_value[1].state)) #add node.STATE to explored
+        n = smallest_value[1]
         for i in range(len(actions)):
-            n = smallest_value[1]
             if n is not None:
                 child = child_node(n,actions[i])
                 if child.state is not None:
-                    num_mis_tiles = misplaced_tiles_value(child.state,child.cost)
-                    heapq.heappush(children,(num_mis_tiles,child))
-        smallest_cost_child = heapq.heappop(children)
+                    num_mis_tiles = misplaced_tiles_value(child.state) #find number of misplaced tiles
+                    f_n = num_mis_tiles + child.cost    #add total cost
+                    heapq.heappush(children,(f_n,child))
         in_explored = 0
-        tmp_explored_tree = copy.deepcopy(explored_tree)
-        while tmp_explored_tree: #if child.STATE is not in explored
-            explored_state = heapq.heappop(tmp_explored_tree)
-
-            if numpy.array_equal(smallest_cost_child[1].state,explored_state[1]):
-                in_explored = 1
-                if children:
-                    smallest_cost_child = heapq.heappop(children)
-                    tmp_explored_tree = copy.deepcopy(explored_tree)
-            if not in_explored and smallest_cost_child[1].state is not None:
-                num_mis_tiles = smallest_cost_child[0]
-                smallest_value = smallest_cost_child
+        tmp_explored_tree = []
+        child_tuple = (0,n)
+        smallest_found = 0
+        while children and not smallest_found:  #while children list is not empty and the smallest child has not been found yet
+            tmp_explored_tree = []
+            #print "in while loop"
+            child_tuple = heapq.heappop(children)
+            while explored_tree and not in_explored:    #while the explored tree is not empty and its not in explored set
+                explored_tuple = explored_tree.pop()
+                tmp_explored_tree.append(copy.deepcopy(explored_tuple))
+                if numpy.array_equal(child_tuple[1].state,explored_tuple[1]):
+                    in_explored = 1
             if in_explored:
                 in_explored = 0
-        empty_children = []
-        children = empty_children
-                            
+            else:
+                smallest_value = child_tuple
+                smallest_found = 1
+            explored_tree = tmp_explored_tree
         iteration = iteration + 1
     return smallest_value[1]
 #end of A* with Misplaced Tile Heuristic function
+
+#A* with Manhattan Distance Heuristic function
+
+
+
+
+#end of A* with Manhatta Distance Heuristic function
 
 def main():
     
@@ -198,14 +205,14 @@ def main():
     #row3 = [7,5,8]
     
     #default puzzle 2   1 6 2 4 3 8 7 x 5
-    row1 = [1,6,2]
-    row2 = [4,3,8]
-    row3 = [7,0,5]
+    #row1 = [1,6,2]
+    #row2 = [4,3,8]
+    #row3 = [7,0,5]
     
     #default puzzle 3   2 1 3 4 7 6 5 8 x
-    #row1 = [2,1,3]
-    #row2 = [4,7,6]
-    #row3 = [5,8,0]
+    row1 = [2,1,3]
+    row2 = [4,7,6]
+    row3 = [5,8,0]
     
     #default puzzle 4   5 x 2 8 4 7 6 3 1
     #row1 = [5,0,2]
@@ -304,6 +311,7 @@ def main():
 
     elif heuristic_choice is 3:
         print "choice numero tree..."
+        value = manhattan_distance_heuristic(a)
 
     if value == -1:
        print("No solution")
