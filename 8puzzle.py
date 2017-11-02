@@ -4,6 +4,7 @@ import copy
 import heapq
 import Queue
 import sets
+import time
 
 #what the matrix should end up looking like
 goal = numpy.matrix('1 2 3; 4 5 6; 7 8 0')
@@ -113,9 +114,12 @@ def uniform_cost_search(problem):
         #node =POP(frontier) /*chooses the lowest-cost node in frontier */
         n = heapq.heappop(frontier) # returns tuple, (priority,data node)
         max_nodes -= 1
+        if n[1].parent is not None:
+            print "The best state to expand with a g(n) = ", n[1].cost
+            print n[1].state
         #if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
         if numpy.array_equal(n[1].state,goal):
-            printerfunction(n[1])
+            #printerfunction(n[1])
             print '\n', "Goal!!", '\n'
             print "To solve this problem the search algorithm expanded a total of", total_nodes, "nodes"
             print "The maximum number of nodes in the queue at any one time was", max_nodes
@@ -191,14 +195,20 @@ def misplaced_tile_heuristic(problem):
         n = heapq.heappop(frontier)
         max_nodes -= 1
         if n[1].parent is not None:
-            print "The best state to expand with a g(n) = ", n[1].cost ,"and h(n) = ",n[0]-n[1].cost ,"is..."
+            tmp_h_n = n[0]-n[1].cost
+            
+            if tmp_h_n < 0:
+                tmp_h_n = 0
+            
+            print "The best state to expand with a g(n) = ", n[1].cost ,"and h(n) = ",tmp_h_n ,"is..."
             print n[1].state
         
         if numpy.array_equal(n[1].state,goal):
-            printerfunction(n[1])
+            #printerfunction(n[1])
             print '\n', "Goal!!", '\n'
             print "To solve this problem the search algorithm expanded a total of", total_nodes, "nodes"
             print "The maximum number of nodes in the queue at any one time was", max_nodes
+            
             print "The depth of the goal node was",n[1].cost
             return 0
         explored.append(n[1].state)
@@ -330,44 +340,35 @@ def manhattan_distance_heuristic(problem):
 
 def main():
     
-    #default puzzle 1   1 2 3 4 x 6 7 5 8
-    #row1 = [1,2,3]
-    #row2 = [4,0,6]
-    #row3 = [7,5,8]
+    #puzzle 1
+    row1 = [1,2,3]
+    row2 = [4,0,6]
+    row3 = [7,5,8]
     
-    #default puzzle 2   1 6 2 4 3 8 7 x 5
-    #row1 = [1,6,2]
-    #row2 = [4,3,8]
-    #row3 = [7,0,5]
-    
-    #default puzzle 3   2 1 3 4 7 6 5 8 x
-    #row1 = [2,1,3]
-    #row2 = [4,7,6]
-    #row3 = [5,8,0]
-    
-    #default puzzle 4   5 x 2 8 4 7 6 3 1
-    #row1 = [5,0,2]
-    #row2 = [8,4,7]
-    #row3 = [6,3,1]
-    
-    #default puzzle 5   8 6 7 2 5 4 3 x 1
-    #row1 = [8,6,7]
-    #row2 = [2,5,4]
-    #row3 = [3,0,1]
-    
-    #doable puzzle
+    #puzzle 2
     #row1 = [0,1,2]
     #row2 = [4,5,3]
     #row3 = [7,8,6]
     
-    #oh boy puzzle
-    row1 = [8,7,1]
-    row2 = [6,0,2]
-    row3 = [5,4,3]
+    #puzzle 3
+    #row1 = [1,6,2]
+    #row2 = [4,3,8]
+    #row3 = [7,0,5]
     
+    #puzzle 4
     #row1 = [1,2,3]
     #row2 = [4,8,0]
     #row3 = [7,6,5]
+    
+    #puzzle 5
+    #row1 = [2,1,3]
+    #row2 = [4,7,6]
+    #row3 = [5,8,0]
+    
+    #oh boy puzzle
+    #row1 = [8,7,1]
+    #row2 = [6,0,2]
+    #row3 = [5,4,3]
     
     #no solution
     #row1 = [1,2,3]
@@ -452,16 +453,27 @@ def main():
             else:
                 a[i,j] = int(row3[j])
 
+    start_time = 0
+    end_time = 0
+    
     if heuristic_choice is 1:
+        start_time = time.clock()
         value = uniform_cost_search(a)
+        end_time = time.clock()
+    
 
     elif heuristic_choice is 2:
-        print "choice numero dos..."
+        start_time = time.clock()
         value = misplaced_tile_heuristic(a)
+        end_time = time.clock()
+        
 
     elif heuristic_choice is 3:
-        print "choice numero tree..."
+        start_time = time.clock()
         value = manhattan_distance_heuristic(a)
+        end_time = time.clock()
+    
+    print "total time:", (end_time - start_time), "seconds"
 
     if value == -1:
        print("No solution")
