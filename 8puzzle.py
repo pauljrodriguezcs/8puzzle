@@ -4,6 +4,7 @@ import copy
 import heapq
 import Queue
 import sets
+import time
 
 #what the matrix should end up looking like
 goal = numpy.matrix('1 2 3; 4 5 6; 7 8 0')
@@ -73,38 +74,63 @@ def child_node(parent,action):
     c_state = result(parent.state,action)
     
     if c_state is -1:
-        return -1
+        return None
     
     cost = copy.deepcopy(parent.cost)+1
     return node(c_state,cost,action,parent)
 #end of child node creation
+
+#printer for debugging purposes
+def printerfunction(value):
+    printer = Queue.LifoQueue()
+    max_val = value.cost
+    while value.parent is not None:
+        printer.put(value)
+        value = value.parent
+    print '\n', "Expanding state"
+    print value.state
+    while not printer.empty():
+        tn = printer.get()
+        print "The best state to expand with a g(n)=",tn.cost
+        print tn.state
+#end printer
 
 #Uniform Cost Search function
 def uniform_cost_search(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
     #frontier = a heap queue ordered by PATH-COST, with node as the only element
-    frontier = [] 
+    frontier = []
     heapq.heappush(frontier,(n.cost,copy.deepcopy(n)))
     #explored = an empty set
     explored = [] 
-    notdone = 1
-    iterations = 1
+    total_nodes = 1
+    max_nodes = 1
     #loop do
-    while notdone:
+    while 1:
         #if EMPTY?(frontier) then return failure
         if not frontier: 
             return -1
         #node =POP(frontier) /*chooses the lowest-cost node in frontier */
         n = heapq.heappop(frontier) # returns tuple, (priority,data node)
+        max_nodes -= 1
+        if n[1].parent is not None:
+            print "The best state to expand with a g(n) = ", n[1].cost
+            print n[1].state
         #if problem.GOAL-TEST(node.STATE) then return SOLUTION(node)
-        if numpy.array_equal(n[1].state,goal): 
-            return n[1]
+        if numpy.array_equal(n[1].state,goal):
+            #printerfunction(n[1])
+            print '\n', "Goal!!", '\n'
+            print "To solve this problem the search algorithm expanded a total of", total_nodes, "nodes"
+            print "The maximum number of nodes in the queue at any one time was", max_nodes
+            print "The depth of the goal node was",n[1].cost
+            return 0
         explored.append(n[1].state) #add node.STATE to explored
         for i in range(len(actions)): #for each action in problem.ACTIONS(node.STATE) do
             if n[1].state is not None:
                 child = child_node(n[1],actions[i])
-            if child.state is not -1 and n[1].state is not None:
+            if child.state is not None and n[1].state is not None:
+                total_nodes += 1
                 in_explored = 0
                 tmp_explored = []
                 while explored: #if child.STATE is not in explored
@@ -124,6 +150,7 @@ def uniform_cost_search(problem):
                     frontier = copy_frontier
                     if not found:
                         heapq.heappush(frontier,(child.cost, child)) #frontier = INSERT(child,frontier)
+                        max_nodes += 1
                     else: #else if child.STATE is in frontier with higher PATH-COST then replace that frontier node with child
                         copy_frontier = []
                         while frontier:
@@ -131,9 +158,8 @@ def uniform_cost_search(problem):
                             heapq.heappush(copy_frontier,frontier_tuple)
                             if numpy.array_equal(child.state,frontier_tuple[1].state) and child.cost < frontier_tuple[1].cost:
                                 heapq.heapush(copy_frontier,(child.cost,child))
-                                print(child.cost, "<", frontier_tuple[1].cost)
+                                #print(child.cost, "<", frontier_tuple[1].cost)
                         frontier = copy_frontier
-        iterations = iterations+1
 #end of Uniform Cost Function
 
 #misplaced tiles function
@@ -143,7 +169,7 @@ def misplaced_tiles_value(problem):
         for j in range(numpy.size(problem,1)):
             if problem[i,j] == goal[i,j]:
                 same_counter = same_counter + 1
-    return (9 - same_counter)
+    return (8 - same_counter)
 
 #misplaced tiles function
 
@@ -152,43 +178,78 @@ def misplaced_tiles_value(problem):
 def misplaced_tile_heuristic(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
-    num_mis_tiles = misplaced_tiles_value(n.state)
-    smallest_value = (num_mis_tiles, n) #the small child from parent
-    children = []           #heapq with children, organized by f_n
-    explored_tree = []      #nodes that have been seen
-    iteration = 1
-    while not numpy.array_equal(smallest_value[1].state,goal):
-        explored_tree.append((smallest_value[0],smallest_value[1].state)) #add node.STATE to explored
-        n = smallest_value[1]
+    h_n = misplaced_tiles_value(n.state)
+    f_n = h_n + n.cost
+    frontier = []           #heapq with children, organized by f_n
+    heapq.heappush(frontier,(n.cost,copy.deepcopy(n)))
+    explored = []      #nodes that have been seen
+    total_nodes = 1
+    max_nodes = 1
+    #print "Expanding state"
+    #print n.state
+    
+    while 1:
+        if not frontier:
+            return -1
+        
+        n = heapq.heappop(frontier)
+        max_nodes -= 1
+        if n[1].parent is not None:
+            tmp_h_n = n[0]-n[1].cost
+            
+            if tmp_h_n < 0:
+                tmp_h_n = 0
+            
+            print "The best state to expand with a g(n) = ", n[1].cost ,"and h(n) = ",tmp_h_n ,"is..."
+            print n[1].state
+        
+        if numpy.array_equal(n[1].state,goal):
+            #printerfunction(n[1])
+            print '\n', "Goal!!", '\n'
+            print "To solve this problem the search algorithm expanded a total of", total_nodes, "nodes"
+            print "The maximum number of nodes in the queue at any one time was", max_nodes
+            
+            print "The depth of the goal node was",n[1].cost
+            return 0
+        explored.append(n[1].state)
+        
         for i in range(len(actions)):
-            if n is not None:
-                child = child_node(n,actions[i])
-                if child.state is not None:
-                    num_mis_tiles = misplaced_tiles_value(child.state) #find number of misplaced tiles
-                    f_n = num_mis_tiles + child.cost    #add total cost
-                    heapq.heappush(children,(f_n,child))
-        in_explored = 0
-        tmp_explored_tree = []
-        child_tuple = (0,n)
-        smallest_found = 0
-        while children and not smallest_found:  #while children list is not empty and the smallest child has not been found yet
-            tmp_explored_tree = []
-            #print "in while loop"
-            child_tuple = heapq.heappop(children)
-            while explored_tree and not in_explored:    #while the explored tree is not empty and its not in explored set
-                explored_tuple = explored_tree.pop()
-                tmp_explored_tree.append(copy.deepcopy(explored_tuple))
-                if numpy.array_equal(child_tuple[1].state,explored_tuple[1]):
-                    in_explored = 1
-            if in_explored:
+            if n[1].state is not None:
+                child = child_node(n[1],actions[i])
+            if child.state is not None and n[1].state is not None: #changed -1 to None
+                total_nodes += 1
                 in_explored = 0
-            else:
-                smallest_value = child_tuple
-                smallest_found = 1
-            explored_tree = tmp_explored_tree
-        iteration = iteration + 1
-    return smallest_value[1]
-#end of A* with Misplaced Tile Heuristic function
+                tmp_explored = []
+                while explored:
+                    explored_state = explored.pop()
+                    tmp_explored.append(explored_state)
+                    if numpy.array_equal(child.state,explored_state):
+                        in_explored = 1
+                expored = tmp_explored
+                if not in_explored:
+                    copy_frontier = []
+                    found = 0
+                    while frontier:
+                        frontier_tuple = heapq.heappop(frontier)
+                        heapq.heappush(copy_frontier,frontier_tuple)
+                        if numpy.array_equal(child.state,frontier_tuple[1].state):
+                            found = 1
+                    frontier = copy_frontier
+                        #if child.state is not None:
+                    h_n = misplaced_tiles_value(child.state)
+                    f_n = child.cost + h_n
+                    if not found:
+                        heapq.heappush(frontier,(f_n,child))
+                        max_nodes +=1
+                    else:
+                        copy_frontier = []
+                        while frontier:
+                            frontier_tuple= heapq.heappop(frontier)
+                            heapq.heappush(copy_frontier,frontier_tuple)
+                            if numpy.array_equal(child.state,frontier_tuple) and f_n < frontier_tuple[0]:
+                                heapq.heappush(copy_frontier,(f_n,child))
+                        frontier = copy_frontier
+#End A* with Misplaced Tile Heuristic function
 
 #Manhattan Distance Calculator
 def manhattan_calculator(problem):
@@ -208,72 +269,111 @@ def manhattan_calculator(problem):
 def manhattan_distance_heuristic(problem):
     #node = a node with STATE = problem.INITIAL-STATE, PATH-COST = 0
     n = node(problem,0,None,None)
-    total_distance = manhattan_calculator(n.state)
-    smallest_value = (total_distance, n) #the small child from parent
-    children = []           #heapq with children, organized by f_n
-    explored_tree = []      #nodes that have been seen
-    iteration = 1
-    while not numpy.array_equal(smallest_value[1].state,goal):
-        explored_tree.append((smallest_value[0],smallest_value[1].state)) #add node.STATE to explored
-        n = smallest_value[1]
+    h_n = manhattan_calculator(n.state)
+    f_n = h_n + n.cost
+    frontier = []           #heapq with children, organized by f_n
+    heapq.heappush(frontier,(n.cost,copy.deepcopy(n)))
+    explored = []      #nodes that have been seen
+    total_nodes = 1
+    max_nodes = 1
+    #print "Expanding state"
+    #print n.state
+    while 1:
+        if not frontier:
+            print "total nodes:", total_nodes
+            return -1
+        
+        n = heapq.heappop(frontier)
+        max_nodes -= 1
+        if n[1].parent is not None:
+            print "The best state to expand with a g(n) = ", n[1].cost ,"and h(n) = ",n[0]-n[1].cost ,"is..."
+            print n[1].state
+        if numpy.array_equal(n[1].state,goal):
+            #printerfunction(n[1])
+            print '\n', "Goal!!", '\n'
+            print "To solve this problem the search algorithm expanded a total of", total_nodes, "nodes"
+            print "The maximum number of nodes in the queue at any one time was", max_nodes
+            print "The depth of the goal node was",n[1].cost
+            return 0
+        #if n[1].parent is not None:
+        #print "The best state to expand with a g(n) = ", n[1].cost ,"and h(n) = ",n[0]-n[1].cost ,"is..."
+        #print n[1].state
+        
+        explored.append(n[1].state)
+        
         for i in range(len(actions)):
-            if n is not None:
-                child = child_node(n,actions[i])
-                if child.state is not None:
-                    total_distance = manhattan_calculator(child.state) #find number of misplaced tiles
-                    f_n = total_distance   #add total cost
-                    heapq.heappush(children,(f_n,child))
-        in_explored = 0
-        tmp_explored_tree = []
-        child_tuple = (0,n)
-        smallest_found = 0
-        while children and not smallest_found:  #while children list is not empty and the smallest child has not been found yet
-            tmp_explored_tree = []
-            #print "in while loop"
-            child_tuple = heapq.heappop(children)
-            while explored_tree and not in_explored:    #while the explored tree is not empty and its not in explored set
-                explored_tuple = explored_tree.pop()
-                tmp_explored_tree.append(copy.deepcopy(explored_tuple))
-                if numpy.array_equal(child_tuple[1].state,explored_tuple[1]):
-                    in_explored = 1
-            if in_explored:
+            if n[1].state is not None:
+                child = child_node(n[1],actions[i])
+            if child.state is not None and n[1].state is not None:
+                total_nodes += 1
                 in_explored = 0
-            else:
-                smallest_value = child_tuple
-                smallest_found = 1
-            explored_tree = tmp_explored_tree
-        iteration = iteration + 1
-    return smallest_value[1]
-
-
+                tmp_explored = []
+                while explored:
+                    explored_state = explored.pop()
+                    tmp_explored.append(explored_state)
+                    if numpy.array_equal(child.state,explored_state):
+                        in_explored = 1
+                expored = tmp_explored
+                if not in_explored:
+                    copy_frontier = []
+                    found = 0
+                    while frontier:
+                        frontier_tuple = heapq.heappop(frontier)
+                        heapq.heappush(copy_frontier,frontier_tuple)
+                        if numpy.array_equal(child.state,frontier_tuple[1].state):
+                            found = 1
+                    frontier = copy_frontier
+                    h_n = manhattan_calculator(child.state)
+                    f_n = child.cost + h_n
+                    if not found:
+                        heapq.heappush(frontier,(f_n,child))
+                        max_nodes +=1
+                    else:
+                        copy_frontier = []
+                        while frontier:
+                            frontier_tuple= heapq.heappop(frontier)
+                            heapq.heappush(copy_frontier,frontier_tuple)
+                            if numpy.array_equal(child.state,frontier_tuple[1].state) and f_n < frontier_tuple[0]:
+                                heapq.heappush(copy_frontier,(f_n,child))
+                        frontier = copy_frontier
 #end of A* with Manhatta Distance Heuristic function
 
 def main():
     
-    #default puzzle 1   1 2 3 4 x 6 7 5 8
-    #row1 = [1,2,3]
-    #row2 = [4,0,6]
-    #row3 = [7,5,8]
+    #puzzle 1
+    row1 = [1,2,3]
+    row2 = [4,0,6]
+    row3 = [7,5,8]
     
-    #default puzzle 2   1 6 2 4 3 8 7 x 5
+    #puzzle 2
+    #row1 = [0,1,2]
+    #row2 = [4,5,3]
+    #row3 = [7,8,6]
+    
+    #puzzle 3
     #row1 = [1,6,2]
     #row2 = [4,3,8]
     #row3 = [7,0,5]
     
-    #default puzzle 3   2 1 3 4 7 6 5 8 x
-    row1 = [2,1,3]
-    row2 = [4,7,6]
-    row3 = [5,8,0]
+    #puzzle 4
+    #row1 = [1,2,3]
+    #row2 = [4,8,0]
+    #row3 = [7,6,5]
     
-    #default puzzle 4   5 x 2 8 4 7 6 3 1
-    #row1 = [5,0,2]
-    #row2 = [8,4,7]
-    #row3 = [6,3,1]
+    #puzzle 5
+    #row1 = [2,1,3]
+    #row2 = [4,7,6]
+    #row3 = [5,8,0]
     
-    #default puzzle 5   8 6 7 2 5 4 3 x 1
-    #row1 = [8,6,7]
-    #row2 = [2,5,4]
-    #row3 = [3,0,1]
+    #oh boy puzzle
+    #row1 = [8,7,1]
+    #row2 = [6,0,2]
+    #row3 = [5,4,3]
+    
+    #no solution
+    #row1 = [1,2,3]
+    #row2 = [4,5,6]
+    #row3 = [8,7,0]
 
     
     error = 1
@@ -353,30 +453,30 @@ def main():
             else:
                 a[i,j] = int(row3[j])
 
+    start_time = 0
+    end_time = 0
+    
     if heuristic_choice is 1:
+        start_time = time.clock()
         value = uniform_cost_search(a)
+        end_time = time.clock()
+    
 
     elif heuristic_choice is 2:
-        print "choice numero dos..."
+        start_time = time.clock()
         value = misplaced_tile_heuristic(a)
+        end_time = time.clock()
+        
 
     elif heuristic_choice is 3:
-        print "choice numero tree..."
+        start_time = time.clock()
         value = manhattan_distance_heuristic(a)
+        end_time = time.clock()
+    
+    print "total time:", (end_time - start_time), "seconds"
 
     if value == -1:
        print("No solution")
 
-    else:
-        printer = Queue.LifoQueue()
-        while value.parent is not None:
-            printer.put(value)
-            value = value.parent
-        s = "Start State: "
-        print s, '\n', value.state
-        while not printer.empty():
-            tn = printer.get()
-            print'\n', "Slide blank",tn.action
-            print tn.state
 
 main()
